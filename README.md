@@ -3,247 +3,386 @@
 An AI-powered growth and consulting company that uses 6 specialized agents to:
 
 - Generate leads from local businesses
-- Negotiate service contracts
+- Negotiate service contracts  
 - Create professional 3-page growth audits
 - Deliver implementation roadmaps
 - Handle customer support
 - Report to the CEO/owner
 
-## Company Structure
+## 🎯 PRIVATE SERVER VERSION
 
-The company is run by 6 main AI agents:
+This is a **production-ready private server** for Apex Intelligence. It runs as a self-contained backend on your own infrastructure with:
 
-1. **Apex Lead Hunter** - Generates qualified leads from local businesses
-2. **Apex Outreach & Deal Desk** - Handles outreach and price negotiation
-3. **Apex Growth Auditor** - Creates professional 3-page business audits
-4. **Apex Delivery Guide** - Builds implementation roadmaps
-5. **Apex Client Care** - Handles customer support and issues
-6. **Apex CEO** - Central reporting and approval authority
+- ✅ Docker containerization (all-in-one deployment)
+- ✅ PostgreSQL database (production-grade)
+- ✅ Redis cache & message broker
+- ✅ Celery workers for background tasks
+- ✅ Supervisor process management
+- ✅ API Key + JWT authentication
+- ✅ Health monitoring & logging
+- ✅ Backup automation
+- ✅ Secure configuration management
 
-## Core Features
+## 🚀 Quick Start (Private Server)
 
-- ✅ Lead generation with scoring
-- ✅ Deal creation and negotiation workflow
-- ✅ Professional audit report generation
-- ✅ Implementation roadmap delivery
-- ✅ Customer support ticketing
-- ✅ Owner approval gates on all major actions
-- ✅ Executive CEO summary dashboard
-- ✅ **NEW: Google Maps lead generation**
-- ✅ **NEW: Email & SMS outreach automation**
-- ✅ **NEW: Twilio voice integration**
-- ✅ **NEW: Voice interface for CEO agent**
-- ✅ **NEW: React dashboard**
-- ✅ **NEW: Background job processing with Celery**
+### Prerequisites
+- Docker & Docker Compose installed
+- Linux/Mac server or Windows with WSL2
+- 2GB+ RAM, 10GB+ disk space
 
-## Business Rules
-
-1. All major actions require owner approval:
-   - Lead approval before outreach
-   - Deal approval before client acceptance
-   - Audit approval before delivery
-   - Delivery plan approval before sending to client
-
-2. All reports flow through the Apex CEO agent
-
-3. The owner remains the final decision-maker
-
-## Quick Start
-
-### Installation
+### 1. Clone and Setup
 
 ```bash
-pip install -r requirements.txt
+cd apex-intelligence
+chmod +x scripts/*.sh
+./scripts/setup.sh
 ```
 
-### Configuration
+This will:
+- Build Docker image
+- Start all services (API, Redis, PostgreSQL, Celery, Supervisor)
+- Initialize database
+- Verify health
 
-Create `.env` file from `.env.example` and add your API keys:
+### 2. Configure API Keys
+
+Edit `.env` with your credentials:
+
+```env
+# Required for production
+SECRET_KEY=your-very-secure-random-key
+APEX_API_KEY=your-api-key-for-private-access
+
+# Optional integrations
+GOOGLE_MAPS_API_KEY=your_key
+TWILIO_ACCOUNT_SID=your_sid
+TWILIO_AUTH_TOKEN=your_token
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+OPENAI_API_KEY=your_key
+
+# Database
+DATABASE_URL=postgresql://apex_user:apex_secure_password_change_me@postgres:5432/apex_intelligence
+REDIS_URL=redis://redis:6379/0
+```
+
+### 3. Start Server
 
 ```bash
-cp .env.example .env
-# Edit .env with your:
-# - Google Maps API key
-# - Twilio credentials
-# - OpenAI API key
-# - Email credentials
-# - Redis URL
+docker-compose up -d
 ```
 
-### Start Redis (for background tasks)
+### 4. Access Your Server
+
+```
+API:           http://localhost:8000
+API Docs:      http://localhost:8000/docs
+Supervisor:    http://localhost:9001
+Celery Flower: http://localhost:5555
+```
+
+## 🔐 Security
+
+### API Authentication
+
+All requests require API key:
 
 ```bash
-redis-server
+curl -H "X-API-Key: your-api-key" http://localhost:8000/ceo/summary
 ```
 
-### Run Celery worker (in separate terminal)
+### JWT Tokens
+
+Get a token:
 
 ```bash
-celery -A integrations.celery_tasks worker --loglevel=info
+curl -X POST http://localhost:8000/auth/token \
+  -H "X-API-Key: your-api-key" \
+  -H "Content-Type: application/json"
 ```
 
-### Run the FastAPI application
+Use the token:
 
 ```bash
-uvicorn app.main:app --reload
+curl -H "Authorization: Bearer <token>" http://localhost:8000/ceo/summary
 ```
 
-### Start React Dashboard (in separate terminal)
+### Network Security
+
+- Only listens on localhost by default
+- Use reverse proxy (Nginx) to expose externally
+- Firewall rules recommended
+- HTTPS recommended for external access
+
+## 📊 Monitoring & Logs
+
+### View Logs
 
 ```bash
-cd dashboard
-npm install
-npm start
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f fastapi
+docker-compose logs -f celery_worker
+docker-compose logs -f redis
 ```
 
-The dashboard will open at `http://localhost:3000`
+### Health Check
 
-## API Endpoints
+```bash
+./scripts/health_check.sh
+```
 
-### Leads
-- `POST /leads/generate` - Generate new leads from Google Maps
-- `POST /leads/approve` - Approve leads for outreach
-- `GET /leads` - List all leads
+### Supervisor Dashboard
 
-### Deals
-- `POST /deals/create` - Create a deal for a lead
-- `POST /deals/approve` - Approve a deal and create client
-- `GET /deals` - List all deals
+Open http://localhost:9001 to monitor processes
 
-### Clients
-- `GET /clients` - List all clients
+### Celery Flower Dashboard
 
-### Audits
-- `POST /audits/create` - Create a growth audit for a client
-- `POST /audits/approve` - Approve audit for delivery
-- `GET /audits` - List all audits
+Open http://localhost:5555 to monitor background tasks
 
-### Delivery
-- `POST /delivery/create` - Create delivery/implementation plan
-- `POST /delivery/approve` - Approve delivery for sending
-- `GET /delivery` - List all delivery plans
+## 🔄 Database
 
-### Customer Care
-- `POST /customers/tickets/create` - Create support ticket
-- `GET /tickets` - List all support tickets
+### Backup
 
-### Executive
-- `GET /ceo/summary` - Get full company status and summary
-- `GET /ceo/voice/summary` - Get voice version of summary
-- `POST /ceo/voice/command` - Send a voice command
-- `GET /health` - Health check
+```bash
+./scripts/backup.sh
+```
 
-### Outreach (Background Tasks)
-- `POST /outreach/email` - Send outreach email
-- `POST /outreach/sms` - Send SMS message
-- `POST /outreach/bulk-email` - Send bulk email campaign
+Backups saved to `./backups/`
 
-## Integration Features
+### Restore
 
-### Google Maps Integration
+```bash
+# SQLite
+cp backups/apex_intelligence_TIMESTAMP.db apex_intelligence.db
+
+# PostgreSQL
+docker exec apex_intelligence-postgres-1 psql -U apex_user apex_intelligence < backups/apex_intelligence_pg_TIMESTAMP.sql
+```
+
+### Migrations
+
+```bash
+./scripts/migrate.sh
+```
+
+## 🛑 Server Management
+
+### Stop
+
+```bash
+docker-compose down
+```
+
+### Restart
+
+```bash
+docker-compose restart
+```
+
+### Rebuild
+
+```bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### Clean Everything
+
+```bash
+docker-compose down -v
+rm -rf logs backups
+```
+
+## 📡 External Access (Optional)
+
+### Using Nginx Reverse Proxy
+
+Create `nginx.conf`:
+
+```nginx
+server {
+    listen 80;
+    server_name your.domain.com;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Then start Nginx:
+
+```bash
+nginx -c nginx.conf
+```
+
+### Using SSH Tunnel
+
+```bash
+ssh -L 8000:localhost:8000 your_server
+```
+
+Then access via http://localhost:8000
+
+## 🏗️ Architecture
+
+```
+Docker Container (apex)
+├── FastAPI App (port 8000)
+├── Celery Worker (background tasks)
+├── Celery Beat (scheduled tasks)
+├── Redis (port 6379)
+├── Supervisor (port 9001)
+└── Application Files
+
+External Services
+├── PostgreSQL (port 5432)
+├── Google Maps API
+├── Twilio
+└── OpenAI
+```
+
+## 📈 Performance Tuning
+
+### Increase Celery Workers
+
+Edit `supervisord.conf`:
+
+```ini
+[program:celery_worker_1]
+command=celery -A integrations.celery_tasks worker --loglevel=info
+
+[program:celery_worker_2]
+command=celery -A integrations.celery_tasks worker --loglevel=info
+```
+
+### Database Connection Pool
+
+Edit `app/database.py` (PostgreSQL):
 
 ```python
-from integrations.google_maps_service import GoogleMapsService
-
-service = GoogleMapsService()
-businesses = service.find_businesses("Austin, TX", "dental clinic")
+engine = create_engine(
+    settings.database_url,
+    pool_size=20,
+    max_overflow=40,
+)
 ```
 
-### Email Outreach
+### Redis Memory
 
-```python
-from integrations.email_service import EmailService
+Edit `docker-compose.yml`:
 
-service = EmailService()
-service.send_outreach_email("contact@business.com", "Business Name", "Your message")
+```yaml
+redis:
+  command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
 ```
 
-### SMS & Voice (Twilio)
+## 🐛 Troubleshooting
 
-```python
-from integrations.twilio_service import TwilioService
+### API not responding
 
-service = TwilioService()
-service.send_outreach_sms("+1234567890", "Business Name")
+```bash
+# Check if container is running
+docker-compose ps
+
+# View logs
+docker-compose logs fastapi
+
+# Restart API
+docker-compose restart fastapi
 ```
 
-### Voice Interface
+### Database connection errors
 
-```python
-from integrations.voice_service import VoiceService
+```bash
+# Check PostgreSQL
+docker-compose logs postgres
 
-service = VoiceService()
-audio = service.speak_company_summary(summary_dict)
-response = service.get_voice_command_response("Show me the leads")
+# Reset database
+docker-compose down -v
+docker-compose up -d
 ```
 
-### Background Tasks (Celery)
+### Celery tasks not running
 
-```python
-from integrations.celery_tasks import send_outreach_email_task
+```bash
+# Check Redis
+docker-compose logs redis
 
-# Non-blocking email sending
-send_outreach_email_task.delay("email@example.com", "Business", "Message")
+# Check Celery worker
+docker-compose logs celery_worker
+
+# Restart
+docker-compose restart celery_worker
 ```
 
-## Example Workflow
+## 📚 API Documentation
 
-1. Generate leads for Austin, dental category
-2. Owner reviews and approves leads via dashboard
-3. System sends personalized emails and SMS to approved leads
-4. Responses are tracked and logged
-5. Create deals for interested leads with pricing
-6. Owner approves pricing and deal via dashboard
-7. System creates client and starts audit research
-8. Auditor generates 3-page audit report
-9. Owner reviews and approves audit via dashboard
-10. System creates delivery roadmap
-11. Owner approves delivery package
-12. Delivery sent to client via email
-13. Client support tickets handled by Apex Client Care
-14. CEO provides real-time status updates
-15. Owner can ask voice commands to get company status
+### Health Check
 
-## Architecture
-
-```
-Apex Intelligence
-├── FastAPI Backend (app/)
-│   ├── 6 AI Agents
-│   ├── Database Models
-│   ├── Workflow Engine
-│   └── API Endpoints
-├── Integrations (integrations/)
-│   ├── Google Maps
-│   ├── Email Service
-│   ├── Twilio (SMS/Voice)
-│   ├── Voice Service (OpenAI)
-│   ├── Celery (Background Tasks)
-│   └── Task Models
-├── React Dashboard (dashboard/)
-│   ├── Real-time Status
-│   ├── Lead Management
-│   ├── Deal Tracking
-│   ├── Voice Interface
-│   └── Analytics
-└── Configuration
-    ├── .env
-    ├── requirements.txt
-    └── Redis/Celery Setup
+```bash
+GET /health
 ```
 
-## Next Steps
+### Generate Leads
 
-- [ ] Deploy to production (AWS/GCP/Heroku)
-- [ ] Add advanced analytics
-- [ ] Implement multi-user support
-- [ ] Add payment processing
-- [ ] Build mobile app
-- [ ] Add more integrations (Slack, HubSpot, etc.)
-- [ ] Implement AI-powered lead scoring
-- [ ] Add CRM features
-- [ ] Build reporting system
+```bash
+POST /leads/generate
+X-API-Key: your-key
 
-## License
+{
+  "city": "Austin, TX",
+  "category": "dental",
+  "limit": 10
+}
+```
+
+### Get CEO Summary
+
+```bash
+GET /ceo/summary
+X-API-Key: your-key
+```
+
+### Voice Command
+
+```bash
+POST /ceo/voice/command
+X-API-Key: your-key
+
+{
+  "command": "Show me the strongest leads"
+}
+```
+
+For full API docs, visit: http://localhost:8000/docs
+
+## 🎯 Next Steps
+
+- [ ] Set up SSL/TLS certificates (Let's Encrypt)
+- [ ] Configure DNS records
+- [ ] Set up monitoring (DataDog, New Relic, Prometheus)
+- [ ] Enable automated backups to cloud storage
+- [ ] Configure email alerts for errors
+- [ ] Set up load balancing (multiple servers)
+- [ ] Enable audit logging for compliance
+
+## 📞 Support
+
+For issues or questions:
+- Check logs: `docker-compose logs -f`
+- Review `.env` configuration
+- Verify API keys are correct
+- Ensure all services are healthy: `./scripts/health_check.sh`
+
+## 📄 License
 
 MIT
